@@ -23,7 +23,7 @@ class C3k2(C2f):
         super().__init__(c1, c2, n, shortcut, g, e)
         # 构建一个 PyTorch 的模块列表（nn.ModuleList），里面放了 n 个子模块；
         # 每个子模块根据条件 c3k 来决定是用 C3k(...) 还是用 Bottleneck(...)
-        self.m = nn.ModuleList(C3k(self.c, self.c, 2, shortcut, g) if c3k else Bottleneck(self.c, self.c, shortcut, g) for _ in range(n))
+        self.m = nn.ModuleList((C3k(self.c, self.c, 2, shortcut, g) if c3k else Bottleneck(self.c, self.c, shortcut, g)) for _ in range(n))
 
 
 """

@@ -20,7 +20,6 @@ class YOLOV11S(torch.nn.Module):
         return self.Detect([p3, p4, p5])
 
 
-
 def test_yolov11s(seed=77, model_path=None):
     model = YOLOV11S().to(dtype=torch.float32, device="cuda")
     model.eval()

@@ -24,7 +24,11 @@ def analysis_official_weights(model_path):
     for key, value in state_dict.items():
         num_params = value.numel()
         total_params += num_params
-        param_details[key] = {"shape": value.shape, "dtype": value.dtype, "num_params": num_params}
+        param_details[key] = {
+            "shape": value.shape,
+            "dtype": value.dtype,
+            "num_params": num_params,
+        }
         # print(f"key: {key}, shape: {value.shape}, dtype: {value.dtype}, params: {num_params}")
 
     print(f"\n总key数量: {len(state_dict)}")
@@ -47,7 +51,11 @@ def analysis_custom_weights():
     for key, value in state_dict.items():
         num_params = value.numel()
         total_params += num_params
-        param_details[key] = {"shape": value.shape, "dtype": value.dtype, "num_params": num_params}
+        param_details[key] = {
+            "shape": value.shape,
+            "dtype": value.dtype,
+            "num_params": num_params,
+        }
         # print(f"key: {key}, shape: {value.shape}, dtype: {value.dtype}, params: {num_params}")
 
     print(f"\n总key数量: {len(state_dict)}")
@@ -159,60 +167,62 @@ def compare_model_weights(model_path):
     print("All model parameters match successfully!")
     print("=" * 80)
 
+
 def compare_weights_data(official_state_dict, custom_state_dict, rtol=1e-5, atol=1e-8):
     """
     比较两个模型权重字典的数据是否一致
-    
+
     Args:
         official_state_dict: 官方模型的state_dict
         custom_state_dict: 自定义模型的state_dict
         rtol: 相对误差容限
         atol: 绝对误差容限
         verbose: 是否打印详细信息
-    
+
     Returns:
         bool: 是否所有权重都匹配
-    """    
+    """
     # 检查key数量是否一致
     if len(official_state_dict) != len(custom_state_dict):
         raise ValueError(f"Key数量不匹配: custom({len(custom_state_dict)}) vs official({len(official_state_dict)})")
-    
+
     # 遍历比较每个权重
     for custom_key, official_key in zip(custom_state_dict.keys(), official_state_dict.keys()):
         # 验证后缀是否匹配
         custom_suffix = extract_suffix(custom_key)
         official_suffix = extract_suffix(official_key)
-        
+
         if custom_suffix != official_suffix:
             raise ValueError(f"Key后缀不匹配: custom({custom_key} -> {custom_suffix}) vs " f"official({official_key} -> {official_suffix})")
-        
+
         # 获取权重数据
         custom_weight = custom_state_dict[custom_key]
         official_weight = official_state_dict[official_key]
-        
+
         # 转换为numpy数组（如果是torch.Tensor）
         if isinstance(custom_weight, torch.Tensor):
             custom_weight = custom_weight.detach().cpu()
         if isinstance(official_weight, torch.Tensor):
             official_weight = official_weight.detach().cpu()
-        
+
         # 检查形状是否一致
         if custom_weight.shape != official_weight.shape:
             raise ValueError(f"形状不匹配 {custom_key}: custom{custom_weight.shape} vs official{official_weight.shape}")
-        
+
         # 检查数据类型
         if custom_weight.dtype != official_weight.dtype:
-           raise ValueError(f"数据类型不同 {custom_key}: custom({custom_weight.dtype}) vs official({official_weight.dtype})")
-        
+            raise ValueError(f"数据类型不同 {custom_key}: custom({custom_weight.dtype}) vs official({official_weight.dtype})")
+
         # 比较数值是否接近
         is_close = compare_tensor(custom_weight, official_weight, dtype=custom_weight.dtype)
-        
+
         if not is_close:
             raise ValueError(f"权重数据不匹配 {custom_key}")
     print("=" * 80)
     print("所有权重数据均匹配成功！")
     print("=" * 80)
     return True
+
 
 def load_official_weights_to_custom_model(custom_model, official_state_dict, custom_details, official_details):
     """
@@ -229,7 +239,7 @@ def load_official_weights_to_custom_model(custom_model, official_state_dict, cus
     """
     print("=" * 80)
     print("Loading Official Weights to Custom Model:")
-    
+
     new_state_dict = OrderedDict()
 
     # 将官方权重映射到自定义模型的key
@@ -275,22 +285,22 @@ def test_model_results():
     torch.manual_seed(77)
     torch.cuda.manual_seed_all(77)
     x_golden = torch.randn(1, 3, 640, 640).to(dtype=torch.float16, device="cpu")
-    
+
     torch.manual_seed(77)  # 重新设置种子
     torch.cuda.manual_seed_all(77)
     x = torch.randn(1, 3, 640, 640).to(dtype=torch.float16, device="cpu")
     compare_tensor(x, x_golden, dtype=torch.float16)
-    
+
     with torch.no_grad():
         out_golden, _ = model.model(x)
     print(f"out_golden: {out_golden.shape}")
-
 
     with torch.no_grad():
         out, _ = custom_model(x)
     print(f"out: {out.shape}")
 
     compare_tensor(out, out_golden, dtype=torch.float16)
+    torch.save(custom_state, "/root/autodl-tmp/model/yolov11/yolov11s_custom.pt")
 
 
 if __name__ == "__main__":
